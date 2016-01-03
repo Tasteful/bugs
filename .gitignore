@@ -6,3 +6,5 @@
 *.user
 *.lock.json
 *.sln.GhostDoc.xml
+*.nupkg
+/src/ClassLibrary1/bin/Debug/net451

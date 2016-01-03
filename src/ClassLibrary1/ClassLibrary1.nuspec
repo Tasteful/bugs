@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>ClassLibrary1</id>
+    <version>1.0.0</version>
+    <authors>ClassLibrary1</authors>
+    <owners>ClassLibrary1</owners>
+    <description>ClassLibrary1</description>
+    <copyright>ClassLibrary1</copyright>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <dependencies>
+      <dependency id="ServiceBus.V1_1" version="1.0.5" />
+    </dependencies>
+  </metadata>
+  <files>
+  </files>
+</package>

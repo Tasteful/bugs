@@ -1,0 +1,16 @@
+﻿{
+  "version": "1.0.0-*",
+  "description": "ClassLibrary1 Class Library",
+  "authors": [ "010PatFor" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+
+  "frameworks": {
+    "net451": {
+      "dependencies": {
+        "ServiceBus.V1_1": "1.0.5"
+      }
+    }
+  }
+}

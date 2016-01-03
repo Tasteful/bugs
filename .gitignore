@@ -2,4 +2,7 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/TestProject-3294/v14
+.vs
+*.user
+*.lock.json
+*.sln.GhostDoc.xml

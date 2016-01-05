@@ -31,8 +31,8 @@ namespace BugTest
 
             DumpChangeTracker("Before remove", _db.ChangeTracker);
 
-            var a = _db.Set<A>().Include(x => x.Items).First();
-            a.Items.RemoveAt(0);
+            _logger.LogInformation("Remove child entity.");
+            _db.Set<A>().Include(x => x.Items).First().Items.RemoveAt(0);
             DumpChangeTracker("After remove", _db.ChangeTracker);
             _logger.LogInformation("Invoke SaveChanges(false)");
             _db.SaveChanges(false);

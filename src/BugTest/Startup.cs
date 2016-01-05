@@ -25,7 +25,9 @@ namespace BugTest
             services.AddLogging();
             services.AddTransient<TestRunner, TestRunner>();
 
-            services.AddEntityFramework().AddDbContext<Db>(o => o.UseInMemoryDatabase());
+            services.AddEntityFramework()
+                .AddInMemoryDatabase()
+                .AddDbContext<Db>(o => o.UseInMemoryDatabase());
 
             return ServiceProvider = services.BuildServiceProvider();
         }

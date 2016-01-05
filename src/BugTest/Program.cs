@@ -27,7 +27,10 @@ namespace BugTest
                     method.Invoke(startup, method.GetParameters().Select(param => param.ParameterType == typeof (IApplicationBuilder) ? app : app.ApplicationServices.GetRequiredService(param.ParameterType)).ToArray());
                 }, startup.ConfigureServices))
                 {
-                    startup.ServiceProvider.GetRequiredService<TestRunner>().Run();
+                    using (var scope = startup.ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
+                    {
+                        scope.ServiceProvider.GetRequiredService<TestRunner>().Run();
+                    }
                 }
             }
             catch (Exception ex)

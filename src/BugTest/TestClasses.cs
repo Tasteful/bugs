@@ -25,15 +25,16 @@ namespace BugTest
             _logger.LogInformation($"ChangeTracker.AutoDetectChangesEnabled: {_db.ChangeTracker.AutoDetectChangesEnabled}");
             // prepare
             _db.Set<A>().Add(new A {Items = new List<B>(new[] {new B {Value = "1"}, new B {Value = "2"}})});
+
             DumpChangeTracker("Add entities", _db.ChangeTracker);
             _logger.LogInformation("Invoke SaveChanges");
             _db.SaveChanges();
 
             DumpChangeTracker("Before remove", _db.ChangeTracker);
-
             _logger.LogInformation("Remove child entity.");
             _db.Set<A>().Include(x => x.Items).First().Items.RemoveAt(0);
             DumpChangeTracker("After remove", _db.ChangeTracker);
+
             _logger.LogInformation("Invoke SaveChanges(false)");
             _db.SaveChanges(false);
             DumpChangeTracker("After save", _db.ChangeTracker);

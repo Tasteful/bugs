@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Hosting;
+using Microsoft.Data.Entity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -23,6 +24,8 @@ namespace BugTest
         {
             services.AddLogging();
             services.AddTransient<TestRunner, TestRunner>();
+
+            services.AddEntityFramework().AddDbContext<Db>(o => o.UseInMemoryDatabase());
 
             return ServiceProvider = services.BuildServiceProvider();
         }

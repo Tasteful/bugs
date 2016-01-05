@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text;
 using Microsoft.Data.Entity;
 using Microsoft.Data.Entity.ChangeTracking;
 using Microsoft.Extensions.Logging;
@@ -21,31 +22,34 @@ namespace BugTest
 
         public void Run()
         {
-            var id = Guid.NewGuid();
+            _logger.LogInformation($"ChangeTracker.AutoDetectChangesEnabled: {_db.ChangeTracker.AutoDetectChangesEnabled}");
             // prepare
-            _db.Set<A>().Add(new A {Id = id, Items = new List<B>(new[] {new B {Value = "1"}, new B {Value = "2"}})});
+            _db.Set<A>().Add(new A {Items = new List<B>(new[] {new B {Value = "1"}, new B {Value = "2"}})});
+            DumpChangeTracker("Add entities", _db.ChangeTracker);
+            _logger.LogInformation("Invoke SaveChanges");
             _db.SaveChanges();
 
-            _logger.LogInformation($"ChangeTracker.AutoDetectChangesEnabled: {_db.ChangeTracker.AutoDetectChangesEnabled}");
-            DumpChangeTracker("Init state", _db.ChangeTracker);
+            DumpChangeTracker("Before remove", _db.ChangeTracker);
 
-            var a = _db.Set<A>().Include(x => x.Items).FirstOrDefault(x => x.Id == id);
-            DumpChangeTracker("After fetch", _db.ChangeTracker);
+            var a = _db.Set<A>().Include(x => x.Items).First();
             a.Items.RemoveAt(0);
             DumpChangeTracker("After remove", _db.ChangeTracker);
+            _logger.LogInformation("Invoke SaveChanges(false)");
             _db.SaveChanges(false);
             DumpChangeTracker("After save", _db.ChangeTracker);
         }
 
         private void DumpChangeTracker(string label, ChangeTracker changeTracker)
         {
-            _logger.LogInformation("Start dumping change tracker states: " + label);
+            var sb = new StringBuilder();
+            sb.AppendLine("Start dumping change tracker states: " + label);
             var entires = changeTracker.Entries();
             foreach (var entry in entires)
             {
-                _logger.LogInformation($"Name: {entry.Metadata.Name} id: {entry.Property("Id")} state: {entry.State}");
+                sb.AppendLine($"Name: {entry.Metadata.Name} id: {entry.Property("Id").CurrentValue} state: {entry.State}");
             }
-            _logger.LogInformation("End dumping change tracker states.");
+            sb.AppendLine("End dumping change tracker states: " + label);
+            _logger.LogInformation(sb.ToString());
         }
     }
 

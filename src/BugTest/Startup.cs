@@ -17,7 +17,7 @@ namespace BugTest
 
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole(minLevel: LogLevel.Debug);
+            loggerFactory.AddConsole().MinimumLevel = LogLevel.Verbose;
         }
 
         public IServiceProvider ConfigureServices(IServiceCollection services)

@@ -33,7 +33,7 @@ namespace MemoryUsage
                 {
                     using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
                     {
-                        Console.WriteLine($"Bafore iteration {i} query cache count {dbContext.CacheCount()}");
+                        Console.WriteLine($"Before iteration {i} query cache count {dbContext.CacheCount()}");
                         var items = dbContext.MyTable1.Where(item => dbContext.MyTable1.Any(x => x.Id == item.Id)).ToList();
                         Console.WriteLine($"After iteration {i} query cache count {dbContext.CacheCount()}");
                     }
@@ -48,7 +48,7 @@ namespace MemoryUsage
                 {
                     using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
                     {
-                        Console.WriteLine($"Bafore iteration {i} query cache count {dbContext.CacheCount()}");
+                        Console.WriteLine($"Before iteration {i} query cache count {dbContext.CacheCount()}");
                         var items = dbContext.MyTable1.Where(item => dbContext.Set<MyTable1>().Any(x => x.Id == item.Id)).ToList();
                         Console.WriteLine($"After iteration {i} query cache count {dbContext.CacheCount()}");
                     }

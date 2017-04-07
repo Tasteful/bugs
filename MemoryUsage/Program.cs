@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace MemoryUsage
 {
@@ -20,6 +20,7 @@ namespace MemoryUsage
             services.AddEntityFrameworkSqlServer()
                 .AddDbContext<MyTestContext>((serviceProvider, options) => options
                 .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
+                .ReplaceService<IQueryCompiler, MyQueryCompiller>()
                 .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest"));
 
             var provider = services.BuildServiceProvider();

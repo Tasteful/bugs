@@ -20,7 +20,6 @@ namespace MemoryUsage
             services.AddEntityFrameworkSqlServer()
                 .AddDbContext<MyTestContext>((serviceProvider, options) => options
                 .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
-                .ReplaceService<IQueryCompiler, MyQueryCompiller>()
                 .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest"));
 
             var provider = services.BuildServiceProvider();

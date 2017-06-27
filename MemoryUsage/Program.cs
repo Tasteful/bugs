@@ -109,8 +109,9 @@ namespace MemoryUsage
                     {
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var items = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).ToList();
-                        var ex = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).Expression;
+                        var queryable = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
                     }
                 }
@@ -129,8 +130,9 @@ namespace MemoryUsage
                     {
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var items = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContains(itemIds)).ToList();
-                        var ex = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).Expression;
+                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContains(itemIds));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
                     }
                 }
@@ -149,8 +151,9 @@ namespace MemoryUsage
                     {
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var items = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(EF.Property<int>(item, "Id"))).ToList();
-                        var ex = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).Expression;
+                        var queryable = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(EF.Property<int>(item, "Id")));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
                     }
                 }
@@ -169,8 +172,9 @@ namespace MemoryUsage
                     {
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var items = dbContext.Set<MyTable1>().Where(GetWhereConstExpression(itemIds)).ToList();
-                        var ex = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).Expression;
+                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereConstExpression(itemIds));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
                     }
                 }
@@ -189,8 +193,9 @@ namespace MemoryUsage
                     {
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tAfter itemIds.Contains() query cache count {dbContext.CacheCount()}");
-                        var items = dbContext.Set<MyTable1>().Where(GetWhereFuncExpression(itemIds)).ToList();
-                        var ex = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id)).Expression;
+                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFuncExpression(itemIds));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
                     }
                 }

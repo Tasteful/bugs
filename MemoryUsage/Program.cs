@@ -36,7 +36,9 @@ namespace MemoryUsage
                     context.MyTable1.Where(CreateExpression(new IdQueryExpressionInfo { Id = "123-1" })).ToList();
                     Console.WriteLine($"Cache count before second CreateExpression {context.CacheCount()}");
                     context.MyTable1.Where(CreateExpression(new IdQueryExpressionInfo { Id = "123-2" })).ToList();
-                    Console.WriteLine($"Cache count after second CreateExpression {context.CacheCount()}");
+                    Console.WriteLine($"Cache count before third CreateExpression {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression(new IdQueryExpressionInfo { Id = "123-2-1" })).ToList();
+                    Console.WriteLine($"Cache count after third CreateExpression {context.CacheCount()}");
 
                     Console.WriteLine();
                     Console.WriteLine();
@@ -45,7 +47,9 @@ namespace MemoryUsage
                     context.MyTable1.Where(CreateExpression2(new IdQueryExpressionInfo { Id = "123-3" })).ToList();
                     Console.WriteLine($"Cache count before second CreateExpression2 {context.CacheCount()}");
                     context.MyTable1.Where(CreateExpression2(new IdQueryExpressionInfo { Id = "123-4" })).ToList();
-                    Console.WriteLine($"Cache count after second CreateExpression2 {context.CacheCount()}");
+                    Console.WriteLine($"Cache count before third CreateExpression2 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression2(new IdQueryExpressionInfo { Id = "123-4-1" })).ToList();
+                    Console.WriteLine($"Cache count after third CreateExpression2 {context.CacheCount()}");
 
                     Console.WriteLine();
                     Console.WriteLine();
@@ -54,7 +58,9 @@ namespace MemoryUsage
                     context.MyTable1.Where(CreateExpression3(new IdQueryExpressionInfo { Id = "123-5" })).ToList();
                     Console.WriteLine($"Cache count before second CreateExpression3 {context.CacheCount()}");
                     context.MyTable1.Where(CreateExpression3(new IdQueryExpressionInfo { Id = "123-6" })).ToList();
-                    Console.WriteLine($"Cache count after second CreateExpression3 {context.CacheCount()}");
+                    Console.WriteLine($"Cache count before third CreateExpression3 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression3(new IdQueryExpressionInfo { Id = "123-6-1" })).ToList();
+                    Console.WriteLine($"Cache count after third CreateExpression3 {context.CacheCount()}");
 
                     Console.WriteLine();
                 }

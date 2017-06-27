@@ -47,6 +47,19 @@ namespace MemoryUsage
             return Expression.Lambda<Func<MyTable1, bool>>(contains, keyEntityProperty.Parameters);
         }
 
+        private static Expression<Func<MyTable1, bool>> GetWhereFromExpressionContainsLambda(List<int> itemIds)
+        {
+            Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
+            Expression<Func<ICollection<int>>> keyCollectionExpression = () => itemIds;
+
+            var contains = Expression.Call(
+                Expression.Invoke(keyCollectionExpression),
+                typeof(ICollection<int>).GetMethod("Contains", new[] { typeof(int) }),
+                keyEntityProperty.Body);
+
+            return Expression.Lambda<Func<MyTable1, bool>>(contains, keyEntityProperty.Parameters);
+        }
+
         private static Expression<Func<MyTable1, bool>> GetWhereFuncExpression(List<int> ids)
         {
             Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
@@ -91,6 +104,7 @@ namespace MemoryUsage
             TestContainsFromExpression(provider);
             TextExpressionFunc(provider);
             TestExpressionConst(provider);
+            TestContainsFromLambdaExpression(provider);
 
             Console.WriteLine();
             Console.WriteLine("Press enter to exit");
@@ -131,6 +145,26 @@ namespace MemoryUsage
                         var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
                         Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
                         var queryable = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContains(itemIds));
+                        var items = queryable.ToList();
+                        var ex = queryable.Expression;
+                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
+                    }
+                }
+            }
+        }
+        private static void TestContainsFromLambdaExpression(IServiceProvider provider)
+        {
+            Console.WriteLine("Contains from lambda Expression");
+            var baseValue = 600;
+            for (var i = 1; i < 6; i++)
+            {
+                using (var scope = provider.CreateScope())
+                {
+                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
+                    {
+                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
+                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
+                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContainsLambda(itemIds));
                         var items = queryable.ToList();
                         var ex = queryable.Expression;
                         Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");

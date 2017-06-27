@@ -1,255 +1,85 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MemoryUsage
 {
     class Program
     {
-        private static Expression<Func<MyTable1, bool>> GetWhereConstExpression(List<int> ids)
-        {
-            Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
-            BinaryExpression last = null;
-            foreach (var key in ids)
-            {
-                var keyExp = Expression.Equal(keyEntityProperty.Body, Expression.Constant(key));
-                if (last == null)
-                {
-                    last = keyExp;
-                }
-                else
-                {
-                    last = Expression.OrElse(last, keyExp);
-                }
-            }
-
-            var where = Expression.Lambda<Func<MyTable1, bool>>(last, keyEntityProperty.Parameters);
-            return where;
-        }
-
-        private static Expression<Func<MyTable1, bool>> GetWhereFromExpressionContains(List<int> itemIds)
-        {
-            Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
-
-            var contains = Expression.Call(
-                Expression.Constant(itemIds),
-                typeof(ICollection<int>).GetMethod("Contains", new[] { typeof(int) }),
-                keyEntityProperty.Body);
-
-            return Expression.Lambda<Func<MyTable1, bool>>(contains, keyEntityProperty.Parameters);
-        }
-
-        private static Expression<Func<MyTable1, bool>> GetWhereFromExpressionContainsLambda(List<int> itemIds)
-        {
-            Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
-            Expression<Func<ICollection<int>>> keyCollectionExpression = () => itemIds;
-
-            var contains = Expression.Call(
-                Expression.Invoke(keyCollectionExpression),
-                typeof(ICollection<int>).GetMethod("Contains", new[] { typeof(int) }),
-                keyEntityProperty.Body);
-
-            return Expression.Lambda<Func<MyTable1, bool>>(contains, keyEntityProperty.Parameters);
-        }
-
-        private static Expression<Func<MyTable1, bool>> GetWhereFuncExpression(List<int> ids)
-        {
-            Expression<Func<MyTable1, int>> keyEntityProperty = x => x.Id;
-            BinaryExpression last = null;
-            foreach (var key in ids)
-            {
-                var k = key;
-                Expression<Func<int>> idLambda = () => k;
-                var keyExp = Expression.Equal(keyEntityProperty.Body, idLambda.Body);
-                if (last == null)
-                {
-                    last = keyExp;
-                }
-                else
-                {
-                    last = Expression.OrElse(last, keyExp);
-                }
-            }
-
-            var where = Expression.Lambda<Func<MyTable1, bool>>(last, keyEntityProperty.Parameters);
-            return where;
-        }
-
         static void Main(string[] args)
         {
-            var services = new ServiceCollection();
-            services.AddMemoryCache();
-            services.AddEntityFrameworkSqlServer()
-                    .AddDbContext<MyTestContext>((serviceProvider, options) => options
-                        .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
-                        .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest"));
+            var idQueryExpressionInfo = new IdQueryExpressionInfo { Id = "123" };
+            var expression1 = CreateExpression(idQueryExpressionInfo);
+            var expression2 = CreateExpression(idQueryExpressionInfo);
 
-            var provider = services.BuildServiceProvider();
-            var memoryCache = (MemoryCache)provider.GetRequiredService<IMemoryCache>();
-            using (var scope = provider.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<MyTestContext>().Database.Migrate();
-            }
+            var comparer = new ExpressionEqualityComparer();
+            var hash1 = comparer.GetHashCode(expression1);
+            var hash2 = comparer.GetHashCode(expression2);
 
-            TestEfProperty(provider);
-            TestContains(provider);
-            TestContainsFromExpression(provider);
-            TextExpressionFunc(provider);
-            TestExpressionConst(provider);
-            TestContainsFromLambdaExpression(provider);
+            Console.WriteLine("hash1: " + hash1);
+            Console.WriteLine("hash2: " + hash2);
+
+            var eq = comparer.Equals(expression1, expression2);
+            Console.WriteLine("eq: " + eq);
+
+            expression1 = CreateExpression2(idQueryExpressionInfo);
+            expression2 = CreateExpression2(idQueryExpressionInfo);
+
+            hash1 = comparer.GetHashCode(expression1);
+            hash2 = comparer.GetHashCode(expression2);
+
+            Console.WriteLine("hash1: " + hash1);
+            Console.WriteLine("hash2: " + hash2);
+
+            eq = comparer.Equals(expression1, expression2);
+            Console.WriteLine("eq: " + eq);
+
+            expression1 = CreateExpression3(idQueryExpressionInfo);
+            expression2 = CreateExpression3(idQueryExpressionInfo);
+
+            hash1 = comparer.GetHashCode(expression1);
+            hash2 = comparer.GetHashCode(expression2);
+
+            Console.WriteLine("hash1: " + hash1);
+            Console.WriteLine("hash2: " + hash2);
+
+            eq = comparer.Equals(expression1, expression2);
+            Console.WriteLine("eq: " + eq);
 
             Console.WriteLine();
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
         }
 
-        private static void TestContains(IServiceProvider provider)
+        public class IdQueryExpressionInfo
         {
-            Console.WriteLine("List<int>.Contains");
-            var baseValue = 100;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(item.Id));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
+            public string Id { get; set; }
         }
 
-        private static void TestContainsFromExpression(IServiceProvider provider)
+        public static Expression<Func<MyTable1, bool>> CreateExpression(IdQueryExpressionInfo queryExpressionInfo)
         {
-            Console.WriteLine("Contains from Expression");
-            var baseValue = 500;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContains(itemIds));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
-        }
-        private static void TestContainsFromLambdaExpression(IServiceProvider provider)
-        {
-            Console.WriteLine("Contains from lambda Expression");
-            var baseValue = 600;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFromExpressionContainsLambda(itemIds));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
+            var param = Expression.Parameter(typeof(MyTable1), "item");
+            var property = Expression.Property(param, "Name");
+
+            Expression result = Expression.Equal(property, Expression.Constant(queryExpressionInfo.Id));
+            return Expression.Lambda<Func<MyTable1, bool>>(result, param);
         }
 
-        private static void TestEfProperty(IServiceProvider provider)
+        public static Expression<Func<MyTable1, bool>> CreateExpression2(IdQueryExpressionInfo queryExpressionInfo)
         {
-            Console.WriteLine("EF.Property");
-            var baseValue = 400;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(item => itemIds.Contains(EF.Property<int>(item, "Id")));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
+            var param = Expression.Parameter(typeof(MyTable1), "item");
+            var property = Expression.Property(param, "Name");
+
+            Expression<Func<string>> valueExpression = () => queryExpressionInfo.Id;
+
+            Expression result = Expression.Equal(property, Expression.Invoke(valueExpression));
+            return Expression.Lambda<Func<MyTable1, bool>>(result, param);
         }
 
-        private static void TestExpressionConst(IServiceProvider provider)
+        public static Expression<Func<MyTable1, bool>> CreateExpression3(IdQueryExpressionInfo queryExpressionInfo)
         {
-            Console.WriteLine("GetWhereConstExpression");
-            var baseValue = 300;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tBefore iteration {i} query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereConstExpression(itemIds));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
-        }
-
-        private static void TextExpressionFunc(IServiceProvider provider)
-        {
-            Console.WriteLine("GetWhereFuncExpression");
-            var baseValue = 200;
-            for (var i = 1; i < 6; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
-                    {
-                        var itemIds = new List<int> { baseValue + i * 1, baseValue + i * 2, baseValue + i * 3, baseValue + i * 4, baseValue + i * 5, baseValue + i * 6 };
-                        Console.WriteLine($"\tAfter itemIds.Contains() query cache count {dbContext.CacheCount()}");
-                        var queryable = dbContext.Set<MyTable1>().Where(GetWhereFuncExpression(itemIds));
-                        var items = queryable.ToList();
-                        var ex = queryable.Expression;
-                        Console.WriteLine($"\tAfter iteration {i} query cache count {dbContext.CacheCount()}");
-                    }
-                }
-            }
-        }
-    }
-
-    public class MyTestContext : DbContext
-    {
-        public MyTestContext(DbContextOptions options)
-            : base(options)
-        {
-        }
-
-        public DbSet<MyTable1> MyTable1 { get; set; }
-
-        public int CacheCount()
-        {
-            var compiledQueryCache = (CompiledQueryCache)this.GetService<ICompiledQueryCache>();
-            return ((MemoryCache)typeof(CompiledQueryCache).GetTypeInfo().GetField("_memoryCache", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(compiledQueryCache)).Count;
+            return item => item.Name == queryExpressionInfo.Id;
         }
     }
 

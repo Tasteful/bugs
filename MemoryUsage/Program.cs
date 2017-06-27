@@ -17,6 +17,7 @@ namespace MemoryUsage
             var hash1 = comparer.GetHashCode(expression1);
             var hash2 = comparer.GetHashCode(expression2);
 
+            Console.WriteLine("Example CreateExpression");
             Console.WriteLine("hash1: " + hash1);
             Console.WriteLine("hash2: " + hash2);
 
@@ -29,6 +30,7 @@ namespace MemoryUsage
             hash1 = comparer.GetHashCode(expression1);
             hash2 = comparer.GetHashCode(expression2);
 
+            Console.WriteLine("Example CreateExpression2");
             Console.WriteLine("hash1: " + hash1);
             Console.WriteLine("hash2: " + hash2);
 
@@ -41,6 +43,7 @@ namespace MemoryUsage
             hash1 = comparer.GetHashCode(expression1);
             hash2 = comparer.GetHashCode(expression2);
 
+            Console.WriteLine("Example CreateExpression3");
             Console.WriteLine("hash1: " + hash1);
             Console.WriteLine("hash2: " + hash2);
 

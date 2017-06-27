@@ -1,7 +1,13 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MemoryUsage
 {
@@ -9,48 +15,50 @@ namespace MemoryUsage
     {
         static void Main(string[] args)
         {
-            var idQueryExpressionInfo = new IdQueryExpressionInfo { Id = "123" };
-            var expression1 = CreateExpression(idQueryExpressionInfo);
-            var expression2 = CreateExpression(idQueryExpressionInfo);
+            var services = new ServiceCollection();
+            services.AddMemoryCache();
+            services.AddEntityFrameworkSqlServer()
+                    .AddDbContext<MyTestContext>((serviceProvider, options) => options
+                        .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
+                        .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest"));
 
-            var comparer = new ExpressionEqualityComparer();
-            var hash1 = comparer.GetHashCode(expression1);
-            var hash2 = comparer.GetHashCode(expression2);
+            var provider = services.BuildServiceProvider();
+            using (var scope = provider.CreateScope())
+            {
+                scope.ServiceProvider.GetRequiredService<MyTestContext>().Database.Migrate();
+            }
 
-            Console.WriteLine("Example CreateExpression");
-            Console.WriteLine("hash1: " + hash1);
-            Console.WriteLine("hash2: " + hash2);
+            using (var scope = provider.CreateScope())
+            {
+                using (var context = scope.ServiceProvider.GetRequiredService<MyTestContext>())
+                {
+                    Console.WriteLine($"Cache count before first CreateExpression {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression(new IdQueryExpressionInfo { Id = "123-1" })).ToList();
+                    Console.WriteLine($"Cache count before second CreateExpression {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression(new IdQueryExpressionInfo { Id = "123-2" })).ToList();
+                    Console.WriteLine($"Cache count after second CreateExpression {context.CacheCount()}");
 
-            var eq = comparer.Equals(expression1, expression2);
-            Console.WriteLine("eq: " + eq);
+                    Console.WriteLine();
+                    Console.WriteLine();
 
-            expression1 = CreateExpression2(idQueryExpressionInfo);
-            expression2 = CreateExpression2(idQueryExpressionInfo);
+                    Console.WriteLine($"Cache count before first CreateExpression2 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression2(new IdQueryExpressionInfo { Id = "123-3" })).ToList();
+                    Console.WriteLine($"Cache count before second CreateExpression2 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression2(new IdQueryExpressionInfo { Id = "123-4" })).ToList();
+                    Console.WriteLine($"Cache count after second CreateExpression2 {context.CacheCount()}");
 
-            hash1 = comparer.GetHashCode(expression1);
-            hash2 = comparer.GetHashCode(expression2);
+                    Console.WriteLine();
+                    Console.WriteLine();
 
-            Console.WriteLine("Example CreateExpression2");
-            Console.WriteLine("hash1: " + hash1);
-            Console.WriteLine("hash2: " + hash2);
+                    Console.WriteLine($"Cache count before first CreateExpression3 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression3(new IdQueryExpressionInfo { Id = "123-5" })).ToList();
+                    Console.WriteLine($"Cache count before second CreateExpression3 {context.CacheCount()}");
+                    context.MyTable1.Where(CreateExpression3(new IdQueryExpressionInfo { Id = "123-6" })).ToList();
+                    Console.WriteLine($"Cache count after second CreateExpression3 {context.CacheCount()}");
 
-            eq = comparer.Equals(expression1, expression2);
-            Console.WriteLine("eq: " + eq);
-
-            expression1 = CreateExpression3(idQueryExpressionInfo);
-            expression2 = CreateExpression3(idQueryExpressionInfo);
-
-            hash1 = comparer.GetHashCode(expression1);
-            hash2 = comparer.GetHashCode(expression2);
-
-            Console.WriteLine("Example CreateExpression3");
-            Console.WriteLine("hash1: " + hash1);
-            Console.WriteLine("hash2: " + hash2);
-
-            eq = comparer.Equals(expression1, expression2);
-            Console.WriteLine("eq: " + eq);
-
-            Console.WriteLine();
+                    Console.WriteLine();
+                }
+            }
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
         }
@@ -86,6 +94,21 @@ namespace MemoryUsage
         }
     }
 
+    public class MyTestContext : DbContext
+    {
+        public MyTestContext(DbContextOptions options)
+            : base(options)
+        {
+        }
+
+        public DbSet<MyTable1> MyTable1 { get; set; }
+
+        public int CacheCount()
+        {
+            var compiledQueryCache = (CompiledQueryCache)this.GetService<ICompiledQueryCache>();
+            return ((MemoryCache)typeof(CompiledQueryCache).GetTypeInfo().GetField("_memoryCache", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(compiledQueryCache)).Count;
+        }
+    }
     public class MyTable1
     {
         [Key]

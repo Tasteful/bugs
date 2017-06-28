@@ -89,11 +89,6 @@ namespace MemoryUsage
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
         }
-
-        private static Expression<Func<MyTable1, bool>> GetExpression(MyTestContext dbContext)
-        {
-            return item => dbContext.Set<MyTable2>().Where(x => x.Id == item.Id).Any();
-        }
     }
 
     public class MyTestContext : DbContext
@@ -123,29 +118,5 @@ namespace MemoryUsage
         [Key]
         public int Id { get; set; }
         public string Name { get; set; }
-    }
-    public class DbSets
-    {
-        private readonly DbContext _context;
-
-        public DbSets(DbContext context)
-        {
-            _context = context;
-        }
-
-        private readonly IDictionary<Type, object> _sets
-            = new Dictionary<Type, object>();
-
-        public DbSet<TEntity> Set<TEntity>() where TEntity : class
-        {
-            object set;
-            if (!_sets.TryGetValue(typeof(TEntity), out set))
-            {
-                set = _context.Set<TEntity>();
-                _sets.Add(typeof(TEntity), set);
-            }
-
-            return (DbSet<TEntity>)set;
-        }
     }
 }

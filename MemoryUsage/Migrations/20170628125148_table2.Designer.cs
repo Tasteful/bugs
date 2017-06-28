@@ -8,9 +8,10 @@ using MemoryUsage;
 namespace MemoryUsage.Migrations
 {
     [DbContext(typeof(MyTestContext))]
-    partial class MyTestContextModelSnapshot : ModelSnapshot
+    [Migration("20170628125148_table2")]
+    partial class table2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2")
@@ -26,18 +27,6 @@ namespace MemoryUsage.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MyTable1");
-                });
-
-            modelBuilder.Entity("MemoryUsage.MyTable2", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MyTable2");
                 });
         }
     }

@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using MemoryUsage.EfOverrides;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace MemoryUsage
@@ -16,12 +16,34 @@ namespace MemoryUsage
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Execution with default ParameterExtractingExpressionVisitor");
+            Execute(false);
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Execution with modified ParameterExtractingExpressionVisitor");
+            Execute(true);
+
+            Console.WriteLine();
+            Console.WriteLine("Press enter to exit");
+            Console.ReadLine();
+        }
+        private static void Execute(bool replaceService) {
+
             var services = new ServiceCollection();
             services.AddMemoryCache();
             services.AddEntityFrameworkSqlServer()
-                .AddDbContext<MyTestContext>((serviceProvider, options) => options
-                .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
-                .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest"));
+                .AddDbContext<MyTestContext>((serviceProvider, options) =>
+                    {
+                        options
+                            .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
+                            .UseSqlServer("Data Source=(local)\\SQL2014; Integrated Security=True; Initial Catalog=LSDevTest");
+
+                        if (replaceService)
+                        {
+                            options.ReplaceService<IQueryCompiler, MyQueryCompiler>();
+                        }
+                    });
 
             var provider = services.BuildServiceProvider();
 
@@ -84,10 +106,6 @@ namespace MemoryUsage
                     }
                 }
             }
-
-            Console.WriteLine();
-            Console.WriteLine("Press enter to exit");
-            Console.ReadLine();
         }
     }
 

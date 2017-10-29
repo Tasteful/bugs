@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace MemoryUsage
 {
-    public class MytestContextFactory : IDbContextFactory<MyTestContext>
+    public class MytestContextFactory : IDesignTimeDbContextFactory<MyTestContext>
     {
-        public MyTestContext Create(DbContextFactoryOptions options)
+        public MyTestContext CreateDbContext(string[] args)
         {
             var opt = new DbContextOptionsBuilder<MyTestContext>()
                 .UseSqlServer("dummy")

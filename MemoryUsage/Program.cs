@@ -60,7 +60,7 @@ namespace MemoryUsage
                 }
             }
 
-            Console.WriteLine("Executing with inline order by");
+            Console.WriteLine("Executing with inline order by: executed with 1 select");
             using (var scope = provider.CreateScope())
             {
                 using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
@@ -71,7 +71,7 @@ namespace MemoryUsage
                 }
             }
 
-            Console.WriteLine("Executing with expression order by");
+            Console.WriteLine("Executing with expression order by: executed with 1+N selects");
             using (var scope = provider.CreateScope())
             {
                 using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())

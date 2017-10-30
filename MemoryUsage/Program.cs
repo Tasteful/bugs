@@ -39,7 +39,7 @@ namespace MemoryUsage
                 .AddDbContext<MyTestContext>((serviceProvider, options) =>
                     {
                         options
-                            .ConfigureWarnings(w => w.Ignore(RelationalEventId.QueryClientEvaluationWarning))
+                            .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
                             .UseSqlServer("Data Source=(local); Integrated Security=True; Initial Catalog=LSDevTest");
                     });
 
@@ -60,15 +60,31 @@ namespace MemoryUsage
                 }
             }
 
+            Console.WriteLine("Executing with inline order by");
             using (var scope = provider.CreateScope())
             {
                 using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
                 {
                     var items = dbContext.MyTable1
-                        .OrderBy(item => dbContext.MyTable2.Where(x => x.Id == item.Id).Select(x => x.Name))
-                        .ToList();
+                     .OrderBy(item => dbContext.MyTable2.Where(x => x.Id == item.Id).Select(x => x.Name).FirstOrDefault())
+                     .ToList();
                 }
             }
+
+            Console.WriteLine("Executing with expression order by");
+            using (var scope = provider.CreateScope())
+            {
+                using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
+                {
+                    Func<MyTable1, object> orderExpression =
+                        item => dbContext.MyTable2.Where(x => x.Id == item.Id).Select(x => x.Name).FirstOrDefault();
+
+                    var items = dbContext.MyTable1
+                     .OrderBy(orderExpression)
+                     .ToList();
+                }
+            }
+
         }
     }
 

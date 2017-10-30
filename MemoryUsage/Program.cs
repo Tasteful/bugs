@@ -22,7 +22,7 @@ namespace MemoryUsage
             }
             catch (Exception e)
             {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e.ToString());
                 Console.ResetColor();
             }
@@ -39,7 +39,7 @@ namespace MemoryUsage
                 .AddDbContext<MyTestContext>((serviceProvider, options) =>
                     {
                         options
-                            .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
+                            .ConfigureWarnings(w => w.Ignore(RelationalEventId.QueryClientEvaluationWarning))
                             .UseSqlServer("Data Source=(local); Integrated Security=True; Initial Catalog=LSDevTest");
                     });
 
@@ -47,7 +47,17 @@ namespace MemoryUsage
 
             using (var scope = provider.CreateScope())
             {
-                scope.ServiceProvider.GetRequiredService<MyTestContext>().Database.Migrate();
+                var db = scope.ServiceProvider.GetRequiredService<MyTestContext>();
+                db.Database.Migrate();
+                if (!db.MyTable1.Any())
+                {
+                    for(var i = 0; i <5; i++)
+                    {
+                        db.MyTable1.Add(new MyTable1 { Name = $"Name1_{i}" });
+                        db.MyTable2.Add(new MyTable2 { Name = $"Name2_{i}" });
+                    }
+                    db.SaveChanges();
+                }
             }
 
             using (var scope = provider.CreateScope())

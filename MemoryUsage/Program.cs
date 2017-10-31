@@ -9,6 +9,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace MemoryUsage
 {
@@ -38,8 +40,7 @@ namespace MemoryUsage
             services.AddEntityFrameworkSqlServer()
                 .AddDbContext<MyTestContext>((serviceProvider, options) =>
                     {
-                        options
-                            .ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
+                        options.ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning))
                             .UseSqlServer("Data Source=(local); Integrated Security=True; Initial Catalog=LSDevTest");
                     });
 
@@ -60,28 +61,45 @@ namespace MemoryUsage
                 }
             }
 
-            Console.WriteLine("Executing with inline order by: executed with 1 select");
+            Console.WriteLine("Executing with inner selectFieldExpression as string will work");
             using (var scope = provider.CreateScope())
             {
                 using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
                 {
+                    Expression<Func<MyTable2, string>> selectFieldExpression =
+                        x => x.Name;
+
+                    Expression<Func<MyTable1, object>> orderExpression =
+                        item => dbContext.MyTable2
+                                         .Where(x => x.Id == item.Id)
+                                         .Select(selectFieldExpression)
+                                         .FirstOrDefault();
+
                     var items = dbContext.MyTable1
-                     .OrderBy(item => dbContext.MyTable2.Where(x => x.Id == item.Id).Select(x => x.Name).FirstOrDefault())
-                     .ToList();
+                                         .Include(x => x.Table2)
+                                         .OrderBy(orderExpression)
+                                         .ToList();
                 }
             }
 
-            Console.WriteLine("Executing with expression order by: executed with 1+N selects");
+            Console.WriteLine("Executing with inner selectFieldExpression as object will throw exception when any '.Include()' is used.");
             using (var scope = provider.CreateScope())
             {
                 using (var dbContext = scope.ServiceProvider.GetRequiredService<MyTestContext>())
                 {
-                    Func<MyTable1, object> orderExpression =
-                        item => dbContext.MyTable2.Where(x => x.Id == item.Id).Select(x => x.Name).FirstOrDefault();
+                    Expression<Func<MyTable2, object>> selectFieldExpression =
+                        x => x.Name;
+
+                    Expression<Func<MyTable1, object>> orderExpression =
+                        item => dbContext.MyTable2
+                                         .Where(x => x.Id == item.Id)
+                                         .Select(selectFieldExpression)
+                                         .FirstOrDefault();
 
                     var items = dbContext.MyTable1
-                     .OrderBy(orderExpression)
-                     .ToList();
+                                         .Include(x => x.Table2)
+                                         .OrderBy(orderExpression)
+                                         .ToList();
                 }
             }
 
@@ -97,6 +115,19 @@ namespace MemoryUsage
 
         public DbSet<MyTable1> MyTable1 { get; set; }
         public DbSet<MyTable2> MyTable2 { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<MyTable1>(b =>
+            {
+                b.HasMany(x => x.Table2)
+                 .WithOne()
+                 .HasPrincipalKey(x => x.Id)
+                 .HasForeignKey(x => x.Id);
+            });
+        }
     }
 
     public class MyTable1
@@ -104,6 +135,7 @@ namespace MemoryUsage
         [Key]
         public int Id { get; set; }
         public string Name { get; set; }
+        public ICollection<MyTable2> Table2 { get; set; }
     }
     public class MyTable2
     {

@@ -12,8 +12,7 @@ namespace BugTest
             services.AddLogging(options => options.AddDebug().AddConsole().SetMinimumLevel(LogLevel.Trace));
             services.AddTransient<TestRunner, TestRunner>();
 
-            services.AddEntityFrameworkInMemoryDatabase()
-                .AddDbContext<Db>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString("D")));
+            services.AddDbContext<Db>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString("D")));
         }
     }
 }

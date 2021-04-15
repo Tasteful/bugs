@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BugTest
@@ -7,16 +9,18 @@ namespace BugTest
     {
         public static void Main(string[] args)
         {
+            var startup = new Startup();
+            var services = new ServiceCollection();
+            startup.ConfigureServices(services);
+            ServiceProvider provider = services.BuildServiceProvider();
+
             try
             {
-                Startup startup = new Startup();
-
-                ServiceCollection services = new ServiceCollection();
-                startup.ConfigureServices(services);
-                ServiceProvider provider = services.BuildServiceProvider();
-
                 using (IServiceScope scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope())
                 {
+                    var db = scope.ServiceProvider.GetRequiredService<Db>();
+                    db.Database.Migrate();
+
                     scope.ServiceProvider.GetRequiredService<TestRunner>().Run();
                 }
             }

@@ -9,10 +9,23 @@ namespace BugTest
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging(options => options.AddDebug().AddConsole().SetMinimumLevel(LogLevel.Trace));
+            services.AddLogging(options =>
+            {
+                options
+                    .ClearProviders()
+                    .AddFilter("*", LogLevel.Trace)
+                    .SetMinimumLevel(LogLevel.Trace)
+                    .AddDebug()
+                    .AddConsole();
+            });
             services.AddTransient<TestRunner, TestRunner>();
 
-            services.AddDbContext<Db>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString("D")));
+            services
+                .AddEntityFrameworkSqlServer()
+                .AddDbContext<Db>((sp, opt) =>
+                {
+                    opt.UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>());
+                });
         }
     }
 }

@@ -30,8 +30,8 @@ namespace BugTest
                 Console.WriteLine(ex);
             }
 
-            Console.Write("Press enter to exit");
-            Console.ReadLine();
+            //Console.Write("Press enter to exit");
+            //Console.ReadLine();
         }
     }
 }

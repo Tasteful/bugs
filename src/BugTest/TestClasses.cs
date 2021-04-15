@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Entity;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
 
 namespace BugTest
 {
@@ -19,5 +20,8 @@ namespace BugTest
 
     public class Db : DbContext
     {
+        public Db([NotNullAttribute] DbContextOptions options) : base(options)
+        {
+        }
     }
 }

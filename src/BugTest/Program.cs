@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Linq;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.FileProviders;
-using Microsoft.AspNet.Hosting;
-using Microsoft.AspNet.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.PlatformAbstractions;
 
 namespace BugTest
 {
@@ -15,22 +9,15 @@ namespace BugTest
         {
             try
             {
-                var startup = new Startup(new HostingEnvironment
+                Startup startup = new Startup();
+
+                ServiceCollection services = new ServiceCollection();
+                startup.ConfigureServices(services);
+                ServiceProvider provider = services.BuildServiceProvider();
+
+                using (IServiceScope scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope())
                 {
-                    EnvironmentName = "Development",
-                    WebRootPath = PlatformServices.Default.Application.ApplicationBasePath,
-                    WebRootFileProvider = new PhysicalFileProvider(PlatformServices.Default.Application.ApplicationBasePath)
-                });
-                using (TestServer.Create(app =>
-                {
-                    var method = typeof (Startup).GetMethod("Configure");
-                    method.Invoke(startup, method.GetParameters().Select(param => param.ParameterType == typeof (IApplicationBuilder) ? app : app.ApplicationServices.GetRequiredService(param.ParameterType)).ToArray());
-                }, startup.ConfigureServices))
-                {
-                    using (var scope = startup.ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
-                    {
-                        scope.ServiceProvider.GetRequiredService<TestRunner>().Run();
-                    }
+                    scope.ServiceProvider.GetRequiredService<TestRunner>().Run();
                 }
             }
             catch (Exception ex)

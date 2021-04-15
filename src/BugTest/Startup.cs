@@ -1,35 +1,18 @@
 using System;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Hosting;
-using Microsoft.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace BugTest
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
-        {
-        }
-
-        public IServiceProvider ServiceProvider { get; set; }
-
-        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
-        {
-            loggerFactory.AddConsole().MinimumLevel = LogLevel.Verbose;
-        }
-
-        public IServiceProvider ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services)
         {
             services.AddLogging();
             services.AddTransient<TestRunner, TestRunner>();
 
-            services.AddEntityFramework()
-                .AddInMemoryDatabase()
-                .AddDbContext<Db>(o => o.UseInMemoryDatabase());
-
-            return ServiceProvider = services.BuildServiceProvider();
+            services.AddEntityFrameworkInMemoryDatabase()
+                .AddDbContext<Db>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString("D")));
         }
     }
 }

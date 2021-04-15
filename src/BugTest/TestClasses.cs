@@ -16,7 +16,10 @@ namespace BugTest
 
         public void Run()
         {
-            _db.TableA.Where(x => !(x.Name == "Adam" && x.Type == "Person")).ToList();
+            _db.TableA.Where(x => !(x.Name == "Adam" && x.Type == "Person")).ToList(); // <------ translated to wrong query
+
+            _db.TableA.Where(x => x.Name != "Adam" && x.Type != "Person").ToList(); // translated to correct query
+            _db.TableA.Where(x => !(x.Name == "Adam") && !(x.Type == "Person")).ToList(); // translated to correct query
         }
     }
 
@@ -27,7 +30,6 @@ namespace BugTest
         public string Name { get; set; }
         public string Type { get; set; }
     }
-
     public class Db : DbContext
     {
         public Db()

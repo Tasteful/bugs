@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BugTest
 {
@@ -8,7 +9,7 @@ namespace BugTest
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging();
+            services.AddLogging(options => options.AddDebug().AddConsole().SetMinimumLevel(LogLevel.Trace));
             services.AddTransient<TestRunner, TestRunner>();
 
             services.AddEntityFrameworkInMemoryDatabase()
